@@ -100,3 +100,56 @@ static int handle_entry(int irq, struct irqaction *action)
     return 0;
 }
 
+/**
+ * handle_exit - Common handler for interrupt exit points
+ * @irq: Hardware interrupt number
+ * @action: Interrupt action structure containing handler info
+ * 
+ * Calculates interrupt handling latency and updates statistics
+ * Can store either raw latency values or distribute them in log2 histogram
+ * 
+ * @return 0 on success, error code otherwise
+ */
+static int handle_exit(int irq, struct irqaction *action )
+{
+    struct irq_key ikey = {};
+    struct info *info;
+    u32 key = 0;
+    u64 delta;
+    u64 *tsp;
+
+    /* Check cgroup filter if enabled */
+    if (filter_cg && !bpf_current_task_under_cgroup(&cgroup_map, 0))
+        return 0;
+
+    /* Get entry timestamp */
+    tsp = bpf_map_lookup_elem(&start, &key);
+    if (!tsp)
+        return 0;
+
+    /* Calculate latency */
+    delta = bpf_ktime_get_ns() - *tsp;
+    if (!targ_ns)
+        delta /= 1000U; /* Convert to microseconds if required */
+
+    /* Prepare key and get/initialize info struct */
+    bpf_probe_read_kernel_str(&ikey.name, sizeof(ikey.name),
+    BPF_CORE_READ(action, name));
+    info = bpf_map_lookup_or_try_init(&infos, &key, &zero);
+    if (!info)
+        return 0;
+    
+    /* Update statistics */
+    if (!targ_dist) {
+        /* store raw latecy */
+        info ->count += delta;
+    } else {
+        /* Update latency histogram */
+        u64 slot = log2(delta);
+        if (slot >= MAX_SLOTS)
+            slots = MAX_SLOTS - 1;
+        info->slots[slot]++;
+    }
+    return 0;
+}
+
