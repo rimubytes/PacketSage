@@ -32,3 +32,15 @@
 #define MAX_ENTRIES 256
 #define IRQ_NAME_LEN 32
 
+/* Runtime configuration flags */
+const volatile bool filter_cg = false /* Enable cgroup filtering */
+const volatile bool targ_dist = false /* Enable latency distribution */
+const volatile bool targ_ns = false /* use nanoseconds (true) or microseconds (false) */
+
+/**
+ * @struct irq_key
+ * @brief Key structure for identifying unique interrupts
+ */
+struct irq_key {
+    char name[IRQ_NAME_LEN]; /* Interrupt handler name */
+}
