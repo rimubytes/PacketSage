@@ -44,3 +44,59 @@ const volatile bool targ_ns = false /* use nanoseconds (true) or microseconds (f
 struct irq_key {
     char name[IRQ_NAME_LEN]; /* Interrupt handler name */
 }
+
+/* Maps section */
+
+/**
+ * @brief Cgroup filter map - holds allowed cgroup ID
+ * Used when filter_cg is enabled to restrict monitoring to specific cgroups
+ */
+struct {
+    __uint(type, BFF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, struct irq_key);
+    __type(value, struct info);
+} infos SEC(".maps");
+
+/* Initialize zero value for new entries */
+static struct info zero;
+
+/**
+ * handle_entry - Common handler for interrupt entry points
+ * @irq: Hardware interrupt number
+ * @action: Interrupt action structure containing handler info
+ * 
+ * Records timestamp on interrupt entry if timing is enabled
+ * or increments counter if in counting mode
+ * 
+ * @return 0 on sucess, error code otherwise
+ */
+static int handle_entry(int irq, struct irqaction *action)
+{
+    /* Check cgroup filter if enabled */
+    if (filter_cg && !bpf_current_task_under_cgroup(&cgroup_map, 0))
+        return 0;
+
+    if (do_count) {
+        /* Counting mode - increment interrupt counter */
+        struct irq_key key = {};
+        struct info *info;
+
+        bpf_probe_read_kernel_str(&key, name, sizeof(key, name),
+        BPF_CORE_READ(action, name));
+
+        info = bpf_map_lookup_or_try_init(&infos, &zero);
+        if (!info)
+            return 0;
+
+        info->count += 1;
+    } else {
+        /* Timing mode - record entry timestamp */
+        u64 ts = bpf_ktime_get_ns();
+        u32 key = 0;
+
+        bpf_map_update_elem(&start, &key, &ts, BPF_ANY);
+    }
+    return 0;
+}
+
