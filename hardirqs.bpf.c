@@ -153,3 +153,29 @@ static int handle_exit(int irq, struct irqaction *action )
     return 0;
 }
 
+/* Tracepoint attacchments */
+SEC("tp_btf/irq_handler_entry")
+int BPF_PROG(irq_handler_entry_btf, int irq, struct irqaction *action)
+{
+    return handle_entry(irq, action);
+}
+
+SEC("tp_bpf/irq_handler_exit")
+int BPF_PROG(irq_handler_exit_btf, int irq, struct irqaction *action)
+{
+    return handle_exit(irq, action);
+}
+
+SEC("raw_tp/irq_handler_entry")
+int BPF_PROG(irq_handler_entry, int irq, struct irqaction *action)
+{
+    return handle_entry(irq, action);
+}
+
+SEC("raw_tp/irq_handler_exit")
+int BPF_PROG(irq_handler_exit, int irq, struct irqaction *action)
+{
+    return handle_exit(irq, action);
+}
+
+char LICENSE[] SEC("license") = "GPL"
