@@ -15,4 +15,9 @@
  * - Distribution of processing times (optional histogram)
  */
 
+#include <vmlinux.h>
  
+ /* Configuration flags */
+ const volatile bool targ_dist = false;  /* Enable latency distribution histogram */
+ const volatile bool targ_ns = false;    /* Use nanoseconds (true) or microseconds (false) */
+
