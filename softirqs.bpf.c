@@ -38,3 +38,8 @@ struct {
     __type(key, u32);
     __type(value, u64);
 } start SEC(".maps");
+
+/* Global statistics arrays (one entry per softirq type) */
+__u64 counts[NR_SOFTIRQS] = {};     /* Count of softirq occurrences */
+__u64 time[NR_SOFTIRQS] = {};       /* Cumulative processing time */
+struct hist hists[NR_SOFTIRQS] = {}; /* Latency histograms */
