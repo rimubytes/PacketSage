@@ -15,9 +15,26 @@
  * - Distribution of processing times (optional histogram)
  */
 
-#include <vmlinux.h>
+ #include <vmlinux.h>
+ #include <bpf/bpf_helpers.h>
+ #include <bpf/bpf_tracing.h>
+ #include "softirqs.h"
+ #include "bits.bpf.h"
+ #include "maps.bpf.h"
  
  /* Configuration flags */
  const volatile bool targ_dist = false;  /* Enable latency distribution histogram */
  const volatile bool targ_ns = false;    /* Use nanoseconds (true) or microseconds (false) */
+ 
+ /**
+  * Per-CPU map to store softirq entry timestamps
+  * Key: Always 0 (single entry per CPU)
+  * Value: Timestamp in nanoseconds
+  */
 
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, u32);
+    __type(value, u64);
+} start SEC(".maps");
