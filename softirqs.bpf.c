@@ -43,3 +43,12 @@ struct {
 __u64 counts[NR_SOFTIRQS] = {};     /* Count of softirq occurrences */
 __u64 time[NR_SOFTIRQS] = {};       /* Cumulative processing time */
 struct hist hists[NR_SOFTIRQS] = {}; /* Latency histograms */
+
+/**
+ * handle_entry - Common handler for softirq entry points
+ * @vec_nr: Softirq vector number identifying the type
+ * 
+ * Records timestamp when a softirq begins processing.
+ * 
+ * @return 0 on success
+ */
