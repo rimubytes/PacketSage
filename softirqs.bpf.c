@@ -52,3 +52,13 @@ struct hist hists[NR_SOFTIRQS] = {}; /* Latency histograms */
  * 
  * @return 0 on success
  */
+
+static int handle_entry(unsigned int vec_nr)
+{
+    u64 ts = bpf_ktime_get_ns();
+    u32 key = 0;
+
+    /* Store entry timestamp in per-CPU array */
+    bpf_map_update_elem(&start, &key, &ts, BPF_ANY);
+    return 0;
+}
