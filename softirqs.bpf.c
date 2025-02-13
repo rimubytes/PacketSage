@@ -62,3 +62,53 @@ static int handle_entry(unsigned int vec_nr)
     bpf_map_update_elem(&start, &key, &ts, BPF_ANY);
     return 0;
 }
+
+/**
+ * handle_exit - Common handler for softirq exit points
+ * @vec_nr: Softirq vector number identifying the type
+ * 
+ * Calculates softirq processing time and updates statistics.
+ * Can either store raw timing data or update a log2 histogram
+ * of processing times.
+ * 
+ * @return 0 on success, error code on invalid vector number
+ */
+
+static int handle_exit(unsigned int vec_nr)
+{
+    u64 delta, *tsp;
+    u32 key = 0;
+
+    /* Validate softirq vector number */
+    if (vec_nr >= NR_SOFTIRQS)
+        return 0;
+
+    /* Get entry timestamp */
+    tsp = bpf_map_lookup_elem(&start, &key);
+    if (!tsp)
+        return 0;
+
+            /* Calculate processing time */
+    delta = bpf_ktime_get_ns() - *tsp;
+    if (!targ_ns)
+        delta /= 1000U;  /* Convert to microseconds if requested */
+
+    if (!targ_dist) {
+        /* Update count and total time atomically */
+        __sync_fetch_and_add(&counts[vec_nr], 1);
+        __sync_fetch_and_add(&time[vec_nr], delta);
+    } else {
+        /* Update latency histogram */
+        struct hist *hist = &hists[vec_nr];
+        u64 slot = log2(delta);
+
+        /* Clamp to maximum slot */
+        if (slot >= MAX_SLOTS)
+            slot = MAX_SLOTS - 1;
+
+        /* Increment histogram slot atomically */
+        __sync_fetch_and_add(&hist->slots[slot], 1);
+    }
+
+    return 0;
+}
