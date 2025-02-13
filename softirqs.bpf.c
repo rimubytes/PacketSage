@@ -112,3 +112,11 @@ static int handle_exit(unsigned int vec_nr)
 
     return 0;
 }
+
+/* BTF-enabled tracepoint handlers */
+
+SEC("tp_btf/softirq_entry")
+int BPF_PROG(softirq_entry_btf, unsigned int vec_nr)
+{
+    return handle_entry(vec_nr);
+}
