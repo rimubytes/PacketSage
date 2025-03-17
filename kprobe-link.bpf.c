@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
+/* 
+ *
+ * File Monitor BPF Program
+ * ------------------------
+ * This BPF program monitors file deletion operations by attaching to the
+ * do_unlinkat system call. It logs the process ID and filename of files
+ * being deleted, as well as the return status of the operation.
+ */
+
 #define BPF_NO_GLOBAL_DATA
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
