@@ -45,7 +45,15 @@ int BPF_KPROBE(do_unlinkat, int dfd, struct filename *name)
     return 0;
 }
 
-
+/**
+ * Exit point for monitoring file deletion operations
+ *
+ * This function is called when the do_unlinkat system call returns.
+ * It logs the return value which indicates the success or failure of the operation.
+ *
+ * @param ret Return value from do_unlinkat
+ * @return Always returns 0
+ */
 SEC("kretprobe/do_unlinkat")
 int BPF_KRETPROBE(do_unlinkat_exit, long ret)
 {
