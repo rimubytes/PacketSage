@@ -44,3 +44,16 @@ int BPF_KPROBE(do_unlinkat, int dfd, struct filename *name)
     
     return 0;
 }
+
+
+SEC("kretprobe/do_unlinkat")
+int BPF_KRETPROBE(do_unlinkat_exit, long ret)
+{
+    // Get the current process ID (PID)
+    pid_t pid = bpf_get_current_pid_tgid() >> 32;
+    
+    // Log the process ID and return value to the kernel trace pipe
+    bpf_printk("KPROBE EXIT: pid = %d, ret = %ld\n", pid, ret);
+    
+    return 0;
+}
